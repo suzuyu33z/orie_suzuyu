@@ -1,0 +1,26 @@
+name: Scheduled Scraping
+
+on:
+  schedule:
+    - cron: '30 8 * * *'  # 日本時間の17:30に相当するUTCの8:30
+
+jobs:
+  run-scraping:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'  # 適切なPythonバージョンを指定
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt  # 必要に応じて
+
+    - name: Run scraping script
+      run: python 定期実行/Scraping_定期実行テスト.py
