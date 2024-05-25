@@ -30,8 +30,9 @@ jobs:
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
-        git add chintai.db
+        git add minatoku.db
         git commit -m 'Update database with latest scraping data'
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+
