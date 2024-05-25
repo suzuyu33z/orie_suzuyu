@@ -2,7 +2,7 @@ name: Scheduled Scraping
 
 on:
   schedule:
-    - cron: '30 8 * * *'  # 日本時間の17:30に相当するUTCの8:30
+    - cron: '0 13 * * *'  # 日本時間の22:00に相当するUTCの13:00
   workflow_dispatch:
 
 jobs:
