@@ -25,3 +25,13 @@ jobs:
 
     - name: Run scraping script
       run: python 定期実行/Scraping_定期実行テスト.py
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add chintai.db
+        git commit -m 'Update database with latest scraping data'
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
