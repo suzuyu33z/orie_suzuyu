@@ -1,9 +1,9 @@
 name: Scheduled Scraping
 
 on:
-  schedule:
-    - cron: '0 13 * * *'  # 日本時間の22:00に相当するUTCの13:00
-  workflow_dispatch:
+  #schedule:
+  #  - cron: '0 13 * * *'  # 日本時間の22:00に相当するUTCの13:00
+  #workflow_dispatch:
 
 permissions:
   contents: write  # リポジトリのコンテンツに書き込み権限を付与
