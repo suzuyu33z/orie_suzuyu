@@ -4,7 +4,6 @@ lxml
 streamlit
 pandas
 numpy
-sqlite3
 python-dotenv
 folium
 streamlit-folium
