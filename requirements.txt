@@ -1,6 +1,12 @@
-requests
-beautifulsoup4
-pandas
 numpy
 geopy
 lxml
+streamlit
+pandas
+numpy
+sqlite3
+python-dotenv
+folium
+streamlit-folium
+requests
+beautifulsoup4
