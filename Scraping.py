@@ -31,6 +31,7 @@ headers = {
 max_page = 5
 all_data = []
 
+
 for district in districts:
     for page in range(1, max_page + 1):
         url = base_url_template.format(district, page)
@@ -51,41 +52,40 @@ for district in districts:
                 if construction_th:
                     base_data["築年数"] = construction_th.find_next_sibling('td').get_text(strip=True).split(' ')[0]
                     base_data["構造"] = construction_th.find_next_sibling('td').get_text(strip=True).split(' ')[2]
-            rooms = item.find_all(class_="unitListBody prg-unitListBody")
-            for room in rooms:
-                data = base_data.copy()
-                # 当該部屋の階数
-                floor_number_td = room.find(class_="roomKaisuu")
-                data["階数"] = floor_number_td.get_text(strip=True) if floor_number_td else None
-                # 賃料と管理費を分けて取得
-                rent_price_label = room.select_one("span.priceLabel")
-                rent_price = rent_price_label.get_text(strip=True) if rent_price_label else None
-                rent_admin = rent_price_label.next_sibling.strip().replace("/", "").replace(",", "") if rent_price_label else None
-                data["家賃"] = rent_price
-                data["管理費"] = rent_admin
-                # 敷金と礼金を分けて取得
-                price = room.select_one("td.price")
-                br_tag = price.find('br').next_sibling.strip() if price.find('br') else ''
+
+            room_kaisuu = item.find_all(class_="roomKaisuu")
+            rent_info1 = item.find_all("span", class_="priceLabel")
+            rent_info2 = item.find_all("td", class_="price")
+            layout = item.find_all("td", class_="layout")
+            floor_plan_image_elements = item.find_all("img", class_="floarPlanPic")
+            property_link_elements = item.find_all("a", href=re.compile("/chintai/room"))
+
+            for i in range(len(rent_info1)):
+                room_data = base_data.copy()
+                room_data["階数"] = room_kaisuu[i].get_text(strip=True) if i < len(room_kaisuu) else None
+                rent_price = rent_info1[i].get_text(strip=True)
+                room_data["家賃"] = rent_price
+                rent_admin = rent_info1[i].next_sibling.strip().replace("/", "").replace(",", "")
+                room_data["管理費"] = rent_admin
+                br_tag = rent_info2[i].find('br').next_sibling.strip() if rent_info2[i].find('br') else ''
                 depo = br_tag.split("/")[0] if '/' in br_tag else ''
                 key = br_tag.split("/")[1] if '/' in br_tag else ''
-                data["敷金"] = depo
-                data["礼金"] = key
-                # 間取りと占有面積を分けて取得
-                layout = room.select_one("td.layout")
-                if layout and layout.find('br'):
-                    room_type = layout.contents[0].strip() if layout.contents else None
-                    room_area = layout.find('br').next_sibling.strip().replace('m²', 'm2') if layout.find('br') else None
-                    data["間取り"] = room_type
-                    data["面積"] = room_area
+                room_data["敷金"] = depo
+                room_data["礼金"] = key
+                if layout[i] and layout[i].find('br'):
+                    room_type = layout[i].contents[0].strip() if layout[i].contents else None
+                    room_area = layout[i].find('br').next_sibling.strip().replace('m²', 'm2') if layout[i].find('br') else None
+                    room_data["間取り"] = room_type
+                    room_data["面積"] = room_area
+
                 property_image_element = item.select_one(".bukkenPhoto .photo img")
-                data["物件画像URL"] = property_image_element["data-original"] if property_image_element else None
-                # 間取り画像URL
-                floor_plan_image_element = item.select_one(".floarPlanPic img")
-                data["間取画像URL"] = floor_plan_image_element["data-original"] if floor_plan_image_element else None
-                # 物件詳細URL
-                property_link_element = item.select_one("a[href*='/chintai/room']")
-                data["物件詳細URL"] = property_link_element['href'] if property_link_element else None
-                all_data.append(data)
+                room_data["物件画像URL"] = property_image_element["data-original"] if property_image_element else None
+
+                room_data["間取画像URL"] = floor_plan_image_elements[i] if i < len(floor_plan_image_elements) else None
+
+                room_data["物件詳細URL"] = property_link_elements[i]['href'] if i < len(property_link_elements) else None
+
+                all_data.append(room_data)
 
 df = pd.DataFrame(all_data)
 
@@ -169,7 +169,7 @@ for district in districts:
                 floor_plan_image_element = tbody.find("div", class_="cassetteitem_other-thumbnail")
                 data["間取画像URL"] = floor_plan_image_element.img.get("rel") if floor_plan_image_element and floor_plan_image_element.img else None
 
-                property_link_element = item.select_one("a[href*='/chintai/jnc_']")
+                property_link_element = tbody.select_one("a[href*='/chintai/jnc_']")
                 data["物件詳細URL"] = "https://suumo.jp" + property_link_element['href'] if property_link_element else None
 
                 all_data.append(data)
