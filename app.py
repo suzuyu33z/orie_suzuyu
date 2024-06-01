@@ -64,16 +64,20 @@ def create_map(filtered_df):
 # 検索結果を表示する関数
 def display_search_results(filtered_df):
     for idx, row in filtered_df.iterrows():
-        st.write(f"### 物件番号: {idx+1}")
-        st.write(f"**名称:** {row['名称']}")
-        st.write(f"**アドレス:** {row['アドレス']}")
-        st.write(f"**階数:** {row['階数']}")
-        st.write(f"**家賃:** {row['家賃']}万円")
-        st.write(f"**間取り:** {row['間取り']}")
-        st.write(f"**物件詳細URL:** {make_clickable(row['物件詳細URL'], 'リンク')}", unsafe_allow_html=True)
-        if st.button(f"お気に入り登録", key=f"favorite_{idx}"):
-            save_favorite_property(st.session_state['username'], idx)
-            st.success(f"{row['名称']}をお気に入りに追加しました")
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.write(f"### 物件番号: {idx+1}")
+            st.write(f"**名称:** {row['名称']}")
+            st.write(f"**アドレス:** {row['アドレス']}")
+            st.write(f"**階数:** {row['階数']}")
+            st.write(f"**家賃:** {row['家賃']}万円")
+            st.write(f"**間取り:** {row['間取り']}")
+            st.write(f"**物件詳細URL:** {make_clickable(row['物件詳細URL'], '詳細情報はこちらをクリック')}", unsafe_allow_html=True)
+            if st.button(f"お気に入り登録", key=f"favorite_{idx}"):
+                save_favorite_property(st.session_state['username'], idx)
+                st.success(f"{row['名称']}をお気に入りに追加しました")
+        with col2:
+            st.image(row['物件画像URL'], use_column_width=True)
         st.write("---")
 
 # パスワードをハッシュ化
@@ -145,41 +149,46 @@ def main():
     # StreamlitのUI要素（スライダー、ボタンなど）の各表示設定
     st.title('賃貸物件情報の可視化')
 
-    menu = ["ホーム", "ログイン", "サインアップ", "マイページ"]
-    choice = st.sidebar.selectbox("メニュー", menu)
+    menu = ["ログイン", "物件を探す","物件を決める"]
+    choice = st.sidebar.radio("", menu)
 
-    if choice == "ホーム":
-        st.subheader("ホーム画面です")
-        if st.session_state['logged_in']:
-            st.write(f"こんにちは、{st.session_state['username']} さん")
-
-    elif choice == "ログイン":
-        st.subheader("ログイン画面です")
-        username = st.sidebar.text_input("ユーザー名を入力してください")
-        password = st.sidebar.text_input("パスワードを入力してください", type='password')
-        if st.sidebar.checkbox("ログイン"):
+    if choice == "ログイン":
+        st.subheader("ログインしてください")
+        st.markdown("<a href='#サインアップ' style='font-size: 0.8em; color: #ff6347;'>ユーザー登録がまだの方は新規ユーザー登録（左より登録可能）をお願いします</a>", unsafe_allow_html=True)
+        username = st.text_input("ユーザー名を入力してください")
+        password = st.text_input("パスワードを入力してください", type='password')
+        if st.button("ログインする"):
             create_user()
             hashed_pswd = make_hashes(password)
             result = login_user(username, check_hashes(password, hashed_pswd))
             if result:
                 st.success(f"{username}さんでログインしました")
+                st.info("物件を探してお気に入り登録できるようになりました")
                 st.session_state['logged_in'] = True
                 st.session_state['username'] = username
             else:
                 st.warning("ユーザー名かパスワードが間違っています")
-
-    elif choice == "サインアップ":
-        st.subheader("新しいアカウントを作成します")
-        new_user = st.text_input("ユーザー名を入力してください")
-        new_password = st.text_input("パスワードを入力してください", type='password')
-        if st.button("サインアップ"):
+        #サインアップ
+        st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+        st.sidebar.subheader("新規ユーザー登録")
+        new_user = st.sidebar.text_input("新しいユーザー名を入力してください")
+        new_password = st.sidebar.text_input("新しいパスワードを入力してください", type='password')
+        if st.sidebar.button("登録する"):
             create_user()
             add_user(new_user, make_hashes(new_password))
-            st.success("アカウントの作成に成功しました")
-            st.info("ログイン画面からログインしてください")
+            st.sidebar.success("アカウントの作成に成功しました")
+            st.sidebar.info("ログインしてください")
 
-    elif choice == "マイページ":
-        st.subheader("マイページ")
+    elif choice == "物件を探す":
+        st.subheader("物件を探してお気に入り登録しよう！")
+        if st.session_state['logged_in']:
+            st.write(f"こんにちは、{st.session_state['username']} さん")
+
+        else:
+            st.warning("ログインしてください")
+
+    elif choice == "物件を決める":
+        st.subheader("物件を決めよう！")
         if st.session_state['logged_in']:
             favorite_properties = get_favorite_properties(st.session_state['username'])
             if favorite_properties:
@@ -194,24 +203,30 @@ def main():
         else:
             st.warning("ログインしてください")
 
-    if st.session_state['logged_in'] and choice == "ホーム":
+    if st.session_state['logged_in'] and choice == "物件を探す":
         col1, col2 = st.columns([1, 2])
         with col1:
-            area = st.radio('■ エリア選択', df['区'].unique())
+            area = st.multiselect('■ エリア選択', df['区'].unique(), default=[])
         with col2:
-            price_min, price_max = st.slider(
-                '■ 家賃範囲 (万円)',
-                min_value=float(1),
-                max_value=float(df['家賃'].max()),
-                value=(float(df['家賃'].min()), float(df['家賃'].max())),
-                step=0.1,
-                format='%.1f'
+            price_min = st.number_input(
+                '■ 家賃下限 (万円)',
+                min_value=int(1),
+                max_value=int(df['家賃'].max()),
+                value=int(df['家賃'].min()),
+                step=1
+            )
+            price_max = st.number_input(
+                '■ 家賃上限 (万円)',
+                min_value=int(1),
+                max_value=int(df['家賃'].max()),
+                value=int(df['家賃'].max()),
+                step=1
             )
         with col2:
-            type_options = st.multiselect('■ 間取り選択', df['間取り'].unique(), default=df['間取り'].unique())
-        
-        filtered_df = df[(df['区'].isin([area])) & (df['間取り'].isin(type_options))]
-        filtered_df = filtered_df[(df['家賃'] >= price_min) & (df['家賃'] <= price_max)]
+            type_options = st.multiselect('■ 間取り選択', df['間取り'].unique(), default=['2LDK', '3LDK'])
+
+        filtered_df = df[(df['区'].isin(area)) & (df['間取り'].isin(type_options))]
+        filtered_df = filtered_df[(filtered_df['家賃'] >= price_min) & (filtered_df['家賃'] <= price_max)]
         filtered_count = len(filtered_df)
 
         filtered_df['緯度'] = pd.to_numeric(filtered_df['緯度'], errors='coerce')
@@ -231,10 +246,10 @@ def main():
             folium_static(m)
         
         show_all_option = st.radio(
-            "表示オプションを選択してください:",
-            ('地図上の検索物件のみ', 'すべての検索物件'),
-            index=0 if not st.session_state.get('show_all', False) else 1,
-            key='show_all_option'
+        "表示オプションを選択してください:",
+        ('地図上の検索物件のみ', 'すべての検索物件'),
+        index=0 if not st.session_state.get('show_all', False) else 1,
+        key='show_all_option'
         )
         st.session_state['show_all'] = (show_all_option == 'すべての検索物件')
         if st.session_state.get('search_clicked', False):
